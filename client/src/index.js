@@ -5,27 +5,53 @@ import PropTypes from 'prop-types';
 export default class App extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-        message: "",
+    this.state = {};
+    this.msg = new SpeechSynthesisUtterance();
+    speechSynthesis.addEventListener('voiceschanged', () => {
+        let voice = speechSynthesis.getVoices().filter(sy => sy.lang === "en-US" && sy.name ==="Samantha");
+        this.msg.voice = voice[0];
+    });
+    this.msg.onend = (e) => {
+        this.recognition.start();
     };
-    this.changeMessage = this.changeMessage.bind(this);
+    this.context = null;
     this.sendMessage = this.sendMessage.bind(this);
+    window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    this.recognition = new SpeechRecognition();
+    this.recognition.interimResults = true;
+    this.recognition.addEventListener('result', e => {
+        if(!speechSynthesis.speaking) {
+            const transcript = Array.from(e.results)
+            .map(result => result[0])
+            .map(result => result.transcript)
+            .join('');
+            if(e.results[0].isFinal){ 
+                this.sendMessage(transcript)
+            }
+        };
+    })
+
+    this.recognition.addEventListener('end', () => {
+        if(!speechSynthesis.speaking) {
+            this.recognition.start();
+        } else {
+            this.recognition.stop();
+        }
+    });
   }
 
-  changeMessage(e) {
-    this.setState({message: e.target.value});
+  componentDidMount(){
+    this.sendMessage('', null);
   }
-  sendMessage(e) {
-    e.preventDefault();
+
+  sendMessage(message) {
     const convo = {
         input: {
-            text: this.state.message
+            text: message
         },
-        context: {},
+        context: this.context,
     }
 
-    this.setState({message: ""});
-    console.log('convo', convo);
     fetch('api/message', {
         body: JSON.stringify(convo),
         method: 'POST',
@@ -34,15 +60,18 @@ export default class App extends Component {
         }
     })
     .then(response => response.json())
-    .then(data => console.log(data));
+    .then(data => {
+        this.context = data.context;
+        this.msg.text = data.output.text.join(" ");
+        this.recognition.stop();
+        speechSynthesis.speak(this.msg); 
+    });
   }
 
   render() {
     return(
-        <div>
-            <form onSubmit={e => this.sendMessage(e)}>
-                <input onChange={this.changeMessage} value={this.state.message} type="text" />
-            </form>
+        <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', fontSize: '5em', textAlign: 'center'}}>
+            Hello, feel free to speak to me!
         </div>
     );
     

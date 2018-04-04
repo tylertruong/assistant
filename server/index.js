@@ -17,6 +17,23 @@ const AssistantV1 = new watson.AssistantV1({
     version: '2018-02-16',
 });
 
+const workspace = {
+    name: 'assistant',
+    description: 'Using the assistant.'
+};
+
+// AssistantV1.createWorkspace(workspace, (err, response) => {
+//     if(err){
+//         console.error(err);
+//     } else {
+//         console.log(JSON.stringify(response));
+//     }
+// })
+
+// AssistantV1.listWorkspaces((err, response) => {
+//     console.log(JSON.stringify(response));
+// });
+
 app.post('/api/message', (req, res, next) => {
     console.log('req', req);
     const payload = {
@@ -28,7 +45,7 @@ app.post('/api/message', (req, res, next) => {
 
     AssistantV1.message(payload, (err, data) => {
         console.log('data', data);
-        return res.json('TEST');
+        return res.json(data);
     })
 });
 
