@@ -17,7 +17,19 @@ const AssistantV1 = new watson.AssistantV1({
     version: '2018-02-16',
 });
 
-app.get('/test', (req, res, next) => {
+app.post('/api/message', (req, res, next) => {
+    console.log('req', req);
+    const payload = {
+        workspace_id: process.env.WORKSPACE_ID,
+        context: req.body.context || {},
+        input: req.body.input || {}
+    };
+    console.log('payload', payload);
+
+    AssistantV1.message(payload, (err, data) => {
+        console.log('data', data);
+        return res.json('TEST');
+    })
 });
 
 app.listen(3000, function() {
